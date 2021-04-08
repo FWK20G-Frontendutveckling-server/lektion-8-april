@@ -5,65 +5,31 @@
  */
 
 const express = require('express');
-const { v4: uuidv4 } = require('uuid');
 const app = express();
+//Importera våra routes
+const todoRouter = require('./routes/todo');
 
-console.log('UUID:', uuidv4())
 app.use(express.json());
-
-let todos = [];
-
-// URL: /api/todo
-// Method: GET
-app.get('/api/todo', (request, response) => {
-  const result = {
-    allTodos: todos,
-    success: true
-  }
-
-  response.json(result);
+//En middleware som körs innan ett request går in i en matchande route
+//next() triggar att gå vidare i koden till matchande route
+app.use((request, response, next) => {
+  console.log(`I middleware innan route ${request.url}`);
+  next();
 });
+//Sätt en basurl till alla routes så alla startar med /api/todo
+//Sen säg att det är de routes som ligger i todoRouter som kopplas till denna basurl 
+app.use('/api/todo', todoRouter);
 
-// URL: /api/todo
-// Method: POST
-
-//Vad behöver vi skicka med i body från frontend?
-app.post('/api/todo', (request, response) => {
-  console.log(request.body);
-  const todo = request.body;
-  todo.id = uuidv4();
-  console.log('Todo', todo);
-  todos.push(todo);
-
-  //Vad ska vi skicka tillbaka som svar?
-  
+//Om ingen route matchas så går request in i nedanstående funktion och skickar tillbaka ett
+//felmeddelande
+app.use((request, response) => {
   const result = {
-    success: true,
-    allTodos: todos
+    success: false,
+    message: 'No endpoint found'
   }
 
-  response.json(result);
+  response.status(404).json(result);
 });
-
-// URL: /api/todo/:id
-// Method: DELETE
-
-app.delete('/api/todo/:id', (request, response) => {
-  const todoId = request.params.id;
-  console.log(todoId);
-  todos = todos.filter((todo) => {
-    return todo.id !== todoId
-  });
-  console.log(todos);
-
-  //Vad ska vi skicka tillbaka som svar?
-  const result = {
-    success: true,
-    allTodos: todos
-  }
-
-  response.json(result);
-})
 
 app.listen(8000, () => {
   console.log('Server started');
